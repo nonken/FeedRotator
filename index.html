@@ -1,0 +1,302 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+    "http://www.w3.org/TR/html4/strict.dtd"
+    >
+<html lang="en">
+<head>
+    <title>Uxebu rotator</title>
+    <link rel="stylesheet" type="text/css" href="ressources/Rotator.css"
+    <style type="text/css">
+		body {
+			background: #000;
+			font: 12px/1.3636 "Myriad Pro", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", sans-serif;
+		}
+
+		.groupLeft {
+			position: absolute;
+			left: 0;
+		}
+
+		.groupRight {
+			position: absolute;
+			right: 0;
+		}
+
+		/* Tweets */
+		.tweets {
+			height: 65px;
+			width: 508px;
+			position: relative;
+			overflow: hidden;
+			margin: 20px auto;
+		}
+
+		.tweets .rotator {
+			margin: 8px 18px;
+			overflow: hidden;
+			height: 100%;
+		}
+
+		.tweets .tweet,
+		.blog .blogEntry {
+			color: rgba(255, 255, 255, .6);
+			width: 100%;
+			height: 100%;
+			font-size: 1em;
+		}
+
+		.tweets .tweet img {
+			float: left;
+			border: 1px white solid;
+			margin-right: 8px;
+		}
+
+		.tweets .pane {
+			overflow: hidden;
+			width:430px;
+		}
+
+		/* Blog */
+		.blog {
+			height: 65px;
+			width: 458px;
+			position: relative;
+			overflow: hidden;
+			margin: 20px auto;
+		}
+
+		.blog .rotator {
+			margin: 8px 18px;
+			overflow: hidden;
+			height: 100%;
+		}
+
+		.blog .tweet {
+			color: rgba(255, 255, 255, .6);
+			width: 100%;
+			height: 100%;
+			font-size: 1em;
+		}
+
+		.blog .tweet img {
+			float: left;
+			border: 1px white solid;
+			margin-right: 8px;
+		}
+
+		.blog .pane {
+			overflow: hidden;
+			width:430px;
+		}
+
+		/* Events */
+		.events {
+			height: 65px;
+			width: 458px;
+			position: relative;
+			overflow: hidden;
+			margin: 20px auto;
+		}
+
+		.events .rotator {
+			margin: 8px 18px;
+			overflow: hidden;
+			height: 100%;
+		}
+
+		.events .event {
+			color: rgba(255, 255, 255, .6);
+			width: 100%;
+			height: 100%;
+			font-size: 1em;
+		}
+    </style>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/dojo/1.4/dojo/dojo.xd.js"></script>
+    <script type="text/javascript">
+	dojo.require("dojo.fx.easing");
+	dojo.require("dojox.widget.AutoRotator");
+	dojo.require("dojox.widget.rotator.Fade");
+	dojo.require("dojox.dtl");
+	dojo.require("dojox.dtl.Context");
+	dojo.require("dojo.io.script");
+	dojo.require("dojo.date");
+	dojo.require("dojo.date.locale");
+
+	dojo.ready(function(){
+		dojo.io.script.get({
+			url: "http://api.twitter.com/1/uxebu/lists/people/statuses.json?per_page=20",
+			jsonp: "callback",
+			load: function(data){
+				var panes = getTwitterPanes(data);
+				r = new dojox.widget.AutoRotator({
+					duration: 4000,
+					transition: "dojox.widget.rotator.crossFade",
+					panes: panes
+				}, "rotatorTweets");
+			}
+		});
+
+		dojo.io.script.get({
+			url: "http://query.yahooapis.com/v1/public/yql?q=select%20title%2Clink%2CpubDate%20from%20rss%20where%20url%3D'http%3A%2F%2Fblog.uxebu.com%2Ffeed%2F'%20OR%20url%3D'http%3A%2F%2Fwww.slideshare.net%2Frss%2Fuser%2Fwolframkriesing'%20OR%20url%3D'http%3A%2F%2Fwww.slideshare.net%2Frss%2Fuser%2Fnonken'%20%7C%20sort(field%3D%22pubDate%22%2C%20descending%3D%22true%22)&format=json",
+			jsonp: "callback",
+			load: function(data){
+				var panes = getBlogPanes(data.query.results.item);
+				r = new dojox.widget.AutoRotator({
+					duration: 4000,
+					transition: "dojox.widget.rotator.crossFade",
+					panes: panes
+				}, "rotatorBlog");
+			}
+		});
+
+		dojo.io.script.get({
+			url: "http://www.google.com/calendar/feeds/0s3d3j8lpu4nl5ab1thgi3nc2s%40group.calendar.google.com/public/full-noattendees?sortorder=ascending&singleevents=true&orderby=starttime&futureevents=true&alt=json-in-script&q=scheduleGoogleSpreadsheetId",
+			jsonp: "callback",
+			load: function(data){
+				console.log(data);
+				var panes = getEventPanes(data.feed.entry);
+				r = new dojox.widget.AutoRotator({
+					duration: 4000,
+					transition: "dojox.widget.rotator.crossFade",
+					panes: panes
+				}, "rotatorEvents");
+			}
+		});
+
+		function getTwitterPanes(data){
+			var template = new dojox.dtl.Template('<img src="{{ img }}" /><strong>{{ user }}</strong> {{ date }}<br />{{ msg }}');
+
+			var panes = [];
+			for(var i=0; i<data.length; i++){
+				var	postDate = new Date(data[i].created_at),
+					today = new Date(),
+					yesterday = dojo.date.add(today, "day", -1),
+					postStr;
+
+				yesterday.setHours(23);
+				yesterday.setMinutes(59);
+				yesterday.setSeconds(59);
+
+				if (postDate <= yesterday){
+					postStr = dojo.date.locale.format(postDate);
+				}else{
+					var diff = dojo.date.difference(postDate, today, "minute"),
+						diffObj;
+
+					if (diff > 59){
+						diff = Math.round(diff/60);
+						diffObj = {
+							diff: "about " + diff,
+							unit: diff > 1 ? "hours" : "hour"
+						}
+					}else if (diff > 0){
+						diffObj = {
+							diff: diff,
+							unit: diff > 1 ? "minutes" : "minute"
+						}
+					}else{
+						diffObj = {
+							diff: "",
+							unit: "just a moment"
+						}
+					}
+
+					postStr = diffObj.diff + " " + diffObj.unit + " ago";
+				}
+
+				var context = new dojox.dtl.Context({
+					msg: data[i].text,
+					date: postStr,
+					user: data[i].user.screen_name,
+					img: data[i].user.profile_image_url
+				});
+
+				panes.push({
+					className: "tweet",
+					innerHTML: template.render(context)
+				});
+			}
+			return panes;
+		}
+
+		function getBlogPanes(data){
+			var template = new dojox.dtl.Template('<strong>{{ title }}</strong><br />{{ date }}');
+
+			var panes = [];
+			for(var i=0; i<data.length; i++){
+				var context = new dojox.dtl.Context({
+					date: dojo.date.locale.format(new Date(data[i].pubDate)),
+					title: data[i].title
+				});
+
+				panes.push({
+					className: "blogEntry",
+					innerHTML: template.render(context)
+				});
+			}
+			return panes;
+		}
+
+		function getEventPanes(data){
+			var template = new dojox.dtl.Template('<strong>{{ title }}</strong><br />{{ date }}');
+
+			var panes = [];
+			for(var i=0; i<data.length; i++){
+				var context = new dojox.dtl.Context({
+					date: dojo.date.locale.format(new Date(data[i].gd$when[0].startTime)),
+					title: data[i].title.$t
+				});
+
+				panes.push({
+					className: "event",
+					innerHTML: template.render(context)
+				});
+			}
+			return panes;
+		}
+	});
+    </script>
+</head>
+<body>
+	<div class="tweets">
+		<div class="groupLeft">
+			<div class="top"></div>
+			<div class="center"></div>
+			<div class="bottom"></div>
+		</div>
+		<div id="rotatorTweets" class="rotator"></div>
+		<div class="groupRight">
+			<div class="top"></div>
+			<div class="center"></div>
+			<div class="bottom"></div>
+		</div>
+	</div>
+
+	<div class="blog">
+		<div class="groupLeft">
+			<div class="top"></div>
+			<div class="center"></div>
+			<div class="bottom"></div>
+		</div>
+		<div id="rotatorBlog" class="rotator"></div>
+		<div class="groupRight">
+			<div class="top"></div>
+			<div class="center"></div>
+			<div class="bottom"></div>
+		</div>
+	</div>
+
+	<div class="events">
+		<div class="groupLeft">
+			<div class="top"></div>
+			<div class="center"></div>
+			<div class="bottom"></div>
+		</div>
+		<div id="rotatorEvents" class="rotator"></div>
+		<div class="groupRight">
+			<div class="top"></div>
+			<div class="center"></div>
+			<div class="bottom"></div>
+		</div>
+	</div>
+</body>
+</html>

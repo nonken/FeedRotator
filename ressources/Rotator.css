@@ -1,0 +1,55 @@
+.groupLeft,
+.groupRight {
+	height: 100%;
+	position: relative;
+	width: 8px;
+	top: 0;
+}
+
+.groupLeft .top {
+	width: 8px;
+	height: 5px;
+	position: absolute;
+	top: 0;
+	background: url(groupTL.png) no-repeat;
+}
+
+.groupLeft .bottom {
+	width: 8px;
+	height: 4px;
+	position: absolute;
+	bottom: 0;
+	background: url(groupBL.png) no-repeat;
+}
+
+.groupLeft .center {
+	width: 8px;
+	top: 5px;
+	bottom: 4px;
+	position: absolute;
+	background: url(groupBG.png) repeat-y;
+}
+
+.groupRight .top {
+	width: 8px;
+	height: 5px;
+	position: absolute;
+	top: 0;
+	background: url(groupTR.png) no-repeat;
+}
+
+.groupRight .bottom {
+	width: 8px;
+	height: 4px;
+	position: absolute;
+	bottom: 0;
+	background: url(groupBR.png) no-repeat;
+}
+
+.groupRight .center {
+	width: 8px;
+	top: 5px;
+	bottom: 4px;
+	position: absolute;
+	background: url(groupBG.png) right repeat-y;
+}
